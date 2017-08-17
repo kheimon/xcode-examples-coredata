@@ -104,17 +104,15 @@ class ViewController: UIViewController {
             try managedContext.save()
             people.append(person)
         } catch let error as NSError {
-            print("Could not save. \(error), \(error.userInfo)")
+            print("Could not save changes. \(error), \(error.userInfo)")
         }
     }
-    
-    func delete(name: String) {
-        
-    }
+
 }
 
 // MARK: - UITableViewDataSource
 extension ViewController: UITableViewDataSource {
+    
     func tableView(_ tableView: UITableView,
                    numberOfRowsInSection section: Int) -> Int {
         return people.count
@@ -131,5 +129,36 @@ extension ViewController: UITableViewDataSource {
             cell.textLabel?.text =
                 person.value(forKeyPath: "name") as? String
             return cell
+    }
+    
+    func tableView(_ tableView: UITableView,
+                   commit editingStyle: UITableViewCellEditingStyle,
+                   forRowAt indexPath: IndexPath) {
+        
+        if editingStyle == UITableViewCellEditingStyle.delete {
+            
+            guard let appDelegate =
+                UIApplication.shared.delegate as? AppDelegate else {
+                    return
+            }
+            
+            let managedContext =
+                appDelegate.persistentContainer.viewContext
+            
+            managedContext.delete(people[indexPath.row])
+            
+            do {
+                try managedContext.save()
+            } catch let error as NSError {
+                print("Could not save changes. \(error), \(error.userInfo)")
+            }
+            
+            tableView.beginUpdates()
+            people.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with:UITableViewRowAnimation.automatic)
+            tableView.endUpdates()
+            
+            appDelegate.saveContext()
+        }
     }
 }
